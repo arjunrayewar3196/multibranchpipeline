@@ -9,7 +9,7 @@ pipeline {
         }
         stage('display massage') {
             steps {
-             sh 'this is testing pipeline'
+             echo 'this is testing pipeline'
             }
         }
     }
