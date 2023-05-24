@@ -1,4 +1,5 @@
 # multibranchpipeline
 # Author
  Arjun rayewar
-email. arjunrayewar@gmail.com
+email:
+arjunrayewar@gmail.com
