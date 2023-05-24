@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Git checkout') {
             steps {
-             git 'https://github.com/arjunrayewar3196/hello-world-servlet.git'
+             git 'https://github.com/arjunrayewar3196/Jenkns-fullcourse-pipelines.git'
             }
         }
     }
