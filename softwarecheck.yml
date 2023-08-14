@@ -1,0 +1,41 @@
+---
+- name: Check software packages and gather data
+  hosts: all
+  become: true
+  #become_user: regex
+  gather_facts: yes
+  vars:
+    owner_group: ec2-user
+    target_dir: /root/test/softwarecheck-{{ansible_date_time.date}}.csv
+    software_to_check:
+      - name: firefox
+      - name: grub
+      - name: kernel
+      - name: systemd
+
+  tasks:
+    - name: Check software version and dates
+      shell: "rpm -qa | grep '{{ item.name }}' || true"
+      loop: "{{ software_to_check }}"
+      register: software_status
+      failed_when: false
+
+    - name: Extract the version and package names
+      set_fact:
+        software_data: "{{ software_data | default([]) + [{'name': item.item.name, 'packages': item.stdout_lines}] }}"
+      loop: "{{ software_status.results }}"
+
+    - name: Create CSV content
+      set_fact:
+        csv_content: |
+          HOSTNAME,IP_ADDRESS,SOFTWARE,PACKAGES
+          {% for data in software_data %}
+          {{ ansible_hostname }},{{ ansible_default_ipv4.address }},{{ data.name }},{{ data.packages | join(', ') }}
+          {% endfor %}
+
+    - name: Save CSV content to a file
+      lineinfile:
+        line: "{{ csv_content }}"
+        dest: "{{ target_dir }}"
+        create: yes
+      delegate_to: localhost

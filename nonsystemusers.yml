@@ -1,0 +1,55 @@
+- name: Gather Non-System Users and Expiry Dates
+  hosts: all
+  become: true
+  #become_user: regex
+  gather_facts: yes
+  vars:
+    controlller_dir: "/home/ec2-user/"
+    target_dir: /root/test/user_expiry-{{ansible_date_time.date}}.csv
+    owner_group: root
+
+  tasks:
+    - name: Get list of non-system users whose home directory starts with /home/
+      ansible.builtin.shell: awk -F ':' '$7 != "/sbin/nologin" && $6 ~ "^/home/" {print $1}' /etc/passwd
+      register: non_system_users_output
+
+    - name: Create a list of non-system users
+      ansible.builtin.set_fact:
+        non_system_users: "{{ non_system_users_output.stdout_lines }}"
+
+    - name: Get sudo group name
+      ansible.builtin.shell: "grep '^sudo:' /etc/group | cut -d: -f4"
+      register: sudo_group_name_output
+      changed_when: false
+
+    - name: Set default sudo group name
+      ansible.builtin.set_fact:
+        sudo_group_name: "{{ sudo_group_name_output.stdout_lines[0] | default('sudo') }}"
+
+    - name: Get sudo status for each non-system user
+      ansible.builtin.shell: "sudo -l -U {{ item }}"
+      loop: "{{ non_system_users }}"
+      register: sudo_users
+
+    - name: Get expiry date for each non-system user
+      ansible.builtin.shell: "chage -l '{{ item }}' | grep 'Account expires' | awk -F ': ' '{print $2}'"
+      loop: "{{ non_system_users }}"
+      register: expiry_dates
+      become_user: root
+
+    - name: Create CSV data with headers and details
+      ansible.builtin.set_fact:
+        csv_data: |
+          "HOSTNAME","IP_ADDRESS","USER","TYPE","SUDO_USER","EXPIRY_DATE"
+          {% for user in non_system_users %}
+          {% set sudo_user_output = sudo_users.results | selectattr('item', 'equalto', user) | list %}
+          {% set sudo_user = 'YES' if sudo_user_output | length > 0 and 'is not allowed to run sudo on' not in sudo_user_output[0].stdout else 'NO' %}
+          "{{ ansible_hostname }}","{{ ansible_facts['default_ipv4']['address'] }}","{{ user }}","NON-SYSTEM","{{ sudo_user }}","{{ expiry_dates.results[loop.index0].stdout | default('never') }}"
+          {% endfor %}
+
+    - name: Save data to CSV file using lineinfile
+      ansible.builtin.lineinfile:
+        path: "{{ target_dir }}"
+        line: "{{ csv_data }}"
+        create: yes
+      delegate_to: localhost

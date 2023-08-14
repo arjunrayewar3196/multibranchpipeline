@@ -1,0 +1,41 @@
+---
+- name: Gather system information
+  hosts: all
+  become: true
+  gather_facts: yes
+  vars:
+    target_dir: "/home/ec2-user/cpu_utilization-{{ansible_date_time.date}}.csv"
+    lines: ""
+    outputlist: ""
+  tasks:
+    - name: Get last patch details on RHEL
+      shell: "sudo yum list updates --security | head -n3"
+      register: last_patch_details
+      changed_when: false
+      ignore_errors: true
+
+    - name: Get CPU Utilization
+      shell:
+        cmd: |
+          grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}'
+      register: cpu_util
+
+    - name: Get system uptime
+      command: "uptime"
+      register: uptime_info
+
+    - name: Get current date and time
+      command: "date +'%Y-%m-%dT%H:%M:%S%z'"
+      register: recorded_on_info
+
+    - name: Generate output lines
+      set_fact:
+        lines: |
+          {{ hostvars[inventory_hostname].ansible_facts['fqdn'] }},{{ hostvars[inventory_hostname].ansible_default_ipv4.address }},{{ hostvars[inventory_hostname].ansible_memtotal_mb }},{{ hostvars[inventory_hostname].ansible_memory_mb.real.used }},{{ hostvars[inventory_hostname].ansible_memory_mb.real.total - hostvars[inventory_hostname].ansible_memory_mb.real.used }},{{ (hostvars[inventory_hostname].ansible_memory_mb.cached + hostvars[inventory_hostname].ansible_memory_mb.buffers) if (hostvars[inventory_hostname].ansible_memory_mb.cached is defined and hostvars[inventory_hostname].ansible_memory_mb.buffers is defined) else "N/A" }},{{ hostvars[inventory_hostname].ansible_swaptotal_mb }},{{ recorded_on_info.stdout }}
+
+    - name: Add formatted output to the file (append)
+      lineinfile:
+        path: "{{ target_dir }}"
+        line: "{{ lines }}"
+        create: true
+      delegate_to: localhost

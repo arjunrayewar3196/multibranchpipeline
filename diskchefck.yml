@@ -1,0 +1,40 @@
+---
+- name: Collect and Append Disk Usage Data
+  hosts: all
+  become: true
+  vars:
+    target_dir: "/root/test/disk_stats-{{ansible_date_time.date}}.csv"
+    headers: Hostname,IP,Filesystem,Size,Used,Avail,Use%,Mounted on
+    owner_group: ec2-user
+
+  tasks:
+    - name: Check if the CSV file exists
+      stat:
+        path: "{{ target_dir }}"
+      register: file_stat
+      delegate_to: localhost
+
+    - name: Add headers to the file (append if file exists, create if not)
+      lineinfile:
+        dest: "{{ target_dir }}"
+        line: "{{ headers }}"
+        create: true
+        state: present
+      when: file_stat.stat.exists
+      delegate_to: localhost
+
+    - name: Check Disk Usage
+      ansible.builtin.shell: "df -h"
+      register: disk_output
+
+    - name: Format Disk Output
+      ansible.builtin.shell: "echo '{{ disk_output.stdout }}' | awk 'NR>1 {print \"{{ ansible_facts['fqdn'] }}\",\"{{ ansible_facts.default_ipv4.address }}\",$1\",\"$2\",\"$3\",\"$4\",\"$5\",\"$6\",\"$7}'"
+      register: formatted_output
+
+    - name: Add formatted output to the file (append)
+      lineinfile:
+        dest: "{{ target_dir }}"
+        line: "{{ formatted_output.stdout }}"
+        create: yes
+        state: present
+      delegate_to: localhost

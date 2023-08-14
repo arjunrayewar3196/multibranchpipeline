@@ -1,0 +1,30 @@
+- name: Get process list and CPU utilization
+  hosts: all
+  gather_facts: yes
+  become: true
+  #become_user: regex
+  vars:
+    controlller_dir: "/home/ec2-user/"
+    target_dir: /root/test/top_5_process-{{ansible_date_time.date}}.csv
+    owner_group: ec2-user
+  tasks:
+    - name: Run the shell command and capture the output
+      ansible.builtin.shell: "ps -eo pid,%cpu,etimes,user,cmd --sort=-%cpu | head -6 | tail -5"
+      register: process_info
+
+    - name: Format process information as CSV
+      ansible.builtin.set_fact:
+        csv_data: |
+          "HOSTNAME","IP_ADDRESS","PROCESS","PID","USER","RUNNING_FROM"
+          {% for host in ansible_play_hosts_all %}
+          {% for item in process_info.stdout_lines %}
+          "{{ ansible_hostname }}","{{ ansible_facts['default_ipv4']['address'] }}","{{ item.split()[-1] | regex_replace('\"', '') }}","{{ item.split()[0] }}","{{ item.split()[3] }}","{{ '%02d:%02d:%02d' | format((item.split()[2] | int / 3600), ((item.split()[2] | int % 3600) / 60), (item.split()[2] | int % 60)) }}"
+          {% endfor %}
+          {% endfor %}
+
+    - name: Create CSV file with process information
+      ansible.builtin.lineinfile:
+        path: "{{ target_dir }}"
+        line: "{{ csv_data }}"
+        create: yes
+      delegate_to: localhost

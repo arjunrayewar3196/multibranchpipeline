@@ -1,0 +1,41 @@
+---
+- name: Check process status and gather data
+  hosts: all
+  become: true
+ # become_user: regex
+  gather_facts: yes
+  vars:
+    controlller_dir: "/home/ec2-user/"
+    target_dir: /root/test/process_running_check-{{ansible_date_time.date}}.csv
+    owner_group: root
+    processes_to_check:
+      - name: firewalld
+      - name: httpd
+
+  tasks:
+    - name: Check process status
+      shell: "systemctl is-active {{ item.name }}"
+      loop: "{{ processes_to_check }}"
+      register: process_status
+      ignore_errors: true
+      changed_when: false
+
+    - name: Collect process data
+      set_fact:
+        process_data: "{{ process_data | default([]) + [item | combine({'status': item.stdout | default('inactive'), 'enabled': 'Yes' if item.stdout == 'active' else 'No', 'hostname': inventory_hostname, 'ip': ansible_host})] }}"
+      loop: "{{ process_status.results }}"
+
+    - name: Create CSV content
+      set_fact:
+        csv_content: |
+          HOSTNAME,IP_ADDRESS,PROCESS,STATUS,ENABLED
+          {% for data in process_data %}
+          {{ ansible_facts['fqdn'] }},{{ ansible_facts['default_ipv4']['address'] }},{{ data.item.name }},{{ data.status }},{{ data.enabled }}
+          {% endfor %}
+
+    - name: Save CSV content to a file
+      lineinfile:
+        line: "{{ csv_content }}"
+        path: "{{ target_dir }}"
+        create: yes
+      delegate_to: localhost
