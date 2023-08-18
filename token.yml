@@ -3,18 +3,20 @@
   hosts: localhost
   gather_facts: no
   vars:
-    tower_base_url: "http://18.143.133.0:30300"
-    tower_token: "AcLdcQZ0ZYLn53Vpxvnhn9U3U7VrJS"
+    awx_base_url: "https://tower.example.com"  # Replace with your AWX URL
+    awx_username: "your_username"
+    awx_password: "your_password"
+    organization_id: Default
     inventory_name: "My_New_Inventory"
   tasks:
     - name: Create Inventory
       uri:
-        url: "{{ tower_base_url }}/api/v2/inventories/"
+        url: "{{ awx_base_url }}/api/v2/inventories/"
         method: POST
-        headers:
-          Authorization: "Bearer {{ tower_token }}"
+        user: "{{ awx_username }}"
+        password: "{{ awx_password }}"
         body_format: json
-        body: '{"name": "{{ inventory_name }}"}'
+        body: '{"name": "{{ inventory_name }}", "organization": {{ organization_id }}}'
         status_code: 201
         validate_certs: no 
       register: create_inventory_response
