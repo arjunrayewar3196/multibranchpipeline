@@ -17,14 +17,14 @@
         
     - name: Create inventory
       tower_inventory:
-        tower_config_file: var/lib/awx/projects/tower-cli.cfg
+        #tower_config_file: var/lib/awx/projects/tower-cli.cfg
         name: "{{ inventory_name }}"   
         state: present
         organization: Default
 
     - name: Create group
       tower_group:
-        tower_config_file: var/lib/awx/projects/tower-cli.cfg
+        #tower_config_file: var/lib/awx/projects/tower-cli.cfg
         inventory: "{{ inventory_name }}"
         name: "{{ group_name }}"
         state: present
@@ -32,7 +32,7 @@
 
     - name: Add host to group
       tower_host:
-        tower_config_file: /var/lib/awx/projects/tower-cli.cfg
+       # tower_config_file: /var/lib/awx/projects/tower-cli.cfg
         inventory: "{{ inventory_name }}"
         name: "{{ host_name }}"
         #groups: "{{ group_name }}"
