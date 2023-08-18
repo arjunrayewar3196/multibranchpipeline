@@ -23,21 +23,21 @@
 
     - name: Create inventory
       tower_inventory:
-        tower_config_file: /path/to/tower-cli.cfg
+        tower_config_file: ~/.tower_cli.cfg
         name: "{{ inventory_name }}"
         organization: MyOrganization
         state: present
 
     - name: Create group
       tower_group:
-        tower_config_file: /path/to/tower-cli.cfg
+        tower_config_file: ~/.tower_cli.cfg
         inventory: "{{ inventory_name }}"
         name: "{{ group_name }}"
         state: present
 
     - name: Add host to group
       tower_host:
-        tower_config_file: /path/to/tower-cli.cfg
+        tower_config_file: ~/.tower_cli.cfg
         inventory: "{{ inventory_name }}"
         name: "{{ host_name }}"
         groups: "{{ group_name }}"
