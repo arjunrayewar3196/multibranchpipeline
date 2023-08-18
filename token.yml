@@ -3,7 +3,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-    tower_base_url: "http://18.143.133.0:30300/"
+    tower_base_url: "http://18.143.133.0:30300"
     tower_username: "admin"
     tower_password: "i-0b5285e554c62f964"
     token_name: "MyAPIUserToken"
