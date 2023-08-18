@@ -1,0 +1,25 @@
+---
+- name: Create Ansible Tower Inventory
+  hosts: localhost
+  gather_facts: no
+  vars:
+    tower_base_url: "http://18.143.133.0:30300/"
+    tower_username: "admin"
+    tower_password: "i-0b5285e554c62f964"
+    inventory_name: "My_New_Inventory"
+  tasks:
+    - name: Create Inventory
+      uri:
+        url: "{{ tower_base_url }}/api/v2/inventories/"
+        method: POST
+        user: "{{ tower_username }}"
+        password: "{{ tower_password }}"
+        body_format: json
+        body: '{"name": "{{ inventory_name }}"}'
+        status_code: 201
+        validate_certs: no 
+      register: create_inventory_response
+
+    - name: Display API Response
+      debug:
+        var: create_inventory_response.json
