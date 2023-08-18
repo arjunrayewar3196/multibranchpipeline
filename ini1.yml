@@ -18,9 +18,7 @@
     - name: Create inventory
       tower_inventory:
         #tower_config_file: var/lib/awx/projects/tower-cli.cfg
-        name: "{{ inventory_name }}"
-        organization: 'Demo'
-       
+        name: "{{ inventory_name }}"   
         state: present
 
     - name: Create group
