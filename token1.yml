@@ -6,7 +6,7 @@
     awx_base_url: "http://18.143.133.0:30300"
     awx_token: "AcLdcQZ0ZYLn53Vpxvnhn9U3U7VrJS"
     organization_id: 1
-    inventory_name: "My_New_Inventory2"
+    inventory_name: "My_New_Inventory1"
     inventory_variables: 
       key1: value1
       key2: value2
@@ -40,7 +40,8 @@
         headers:
           Authorization: "Bearer {{ awx_token }}"
         body_format: json
-        body: '{"variables": {{ inventory_variables | to_nice_json }}}'
+        body: '{"variables": {{ inventory_variables | to_nice_json | json_query(".") }}}'
         status_code: 200
         validate_certs: no
       register: update_inventory_response
+
