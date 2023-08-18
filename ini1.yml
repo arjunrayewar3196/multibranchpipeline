@@ -1,6 +1,7 @@
 ---
 - name: Create inventory and save vars
   hosts: localhost
+  connection: local
   gather_facts: no
   vars:
     inventory_name: "My Inventory"
