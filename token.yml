@@ -10,10 +10,10 @@
   tasks:
     - name: Create API Token
       uri:
-        url: "{{ awx_base_url }}/api/v2/tokens/"
+        url: "{{ tower_base_ur }}/api/v2/tokens/"
         method: POST
-        user: "{{ awx_username }}"
-        password: "{{ awx_password }}"
+        user: "{{ tower_username }}"
+        password: "{{ tower_password }}"
         body_format: json
         body: '{"name": "{{ token_name }}"}'
         status_code: 201
