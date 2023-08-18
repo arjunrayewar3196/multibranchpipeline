@@ -1,0 +1,27 @@
+---
+- name: Create Ansible Tower Inventory
+  hosts: localhost
+  gather_facts: no
+  vars:
+    awx_base_url: "http://18.143.133.0:30300"
+    awx_token: "AcLdcQZ0ZYLn53Vpxvnhn9U3U7VrJS"
+    organization_id: 1
+    inventory_name: "My_New_Inventory"
+    user_name: "arjun"
+  tasks:
+    - name: Create Inventory
+      uri:
+        url: "{{ awx_base_url }}/api/v2/inventories/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ awx_token }}"
+        body_format: json
+        body: '{"name": "{{ inventory_name }}", "organization": {{ organization_id }}}'
+        variables: "{{ user_name }}"
+        status_code: 201
+        validate_certs: no 
+      register: create_inventory_response
+
+    - name: Display API Response
+      debug:
+        var: create_inventory_response.json
