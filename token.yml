@@ -1,5 +1,5 @@
 ---
-- name: Create Ansible Tower Inventory
+- name: Create Ansible Tower Inventory and Save Variables
   hosts: localhost
   gather_facts: no
   vars:
@@ -7,8 +7,33 @@
     awx_token: "AcLdcQZ0ZYLn53Vpxvnhn9U3U7VrJS"
     organization_id: 1
     inventory_name: "My_New_Inventory"
+    user_name: "arjun"
+    inventory_variables: 
+      key1: value1
+      key2: value2
   tasks:
-    - name: Create Inventory
+    - name: Check if Inventory Exists
+      uri:
+        url: "{{ awx_base_url }}/api/v2/inventories/"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ awx_token }}"
+        body_format: json
+        status_code: 200
+        validate_certs: no
+        return_content: yes
+      register: inventory_list_response
+
+    - name: Set Inventory Exists Flag
+      set_fact:
+        inventory_exists: "{{ inventory_name in inventory_list_response.json.results | map(attribute='name') | list }}"
+
+    - name: Display Inventory List
+      debug:
+        var: inventory_list_response.json.results
+
+    - name: Create Inventory if Not Exists
+      when: not inventory_exists
       uri:
         url: "{{ awx_base_url }}/api/v2/inventories/"
         method: POST
@@ -17,9 +42,33 @@
         body_format: json
         body: '{"name": "{{ inventory_name }}", "organization": {{ organization_id }}}'
         status_code: 201
-        validate_certs: no 
+        validate_certs: no
       register: create_inventory_response
+      ignore_errors: yes
 
     - name: Display API Response
       debug:
         var: create_inventory_response.json
+
+    - name: Get Inventory ID
+      set_fact:
+        inventory_id: "{{ create_inventory_response.json.id }}"
+      when: create_inventory_response.status == 201
+
+    - name: Update Inventory Variables
+      when: inventory_id is defined
+      uri:
+        url: "{{ awx_base_url }}/api/v2/inventories/{{ inventory_id }}/"
+        method: PATCH
+        headers:
+          Authorization: "Bearer {{ awx_token }}"
+        body_format: json
+        body: '{"variables": {{ inventory_variables | to_json }}}'
+        status_code: 200
+        validate_certs: no
+      register: update_inventory_response
+
+    - name: Display Update Response
+      when: update_inventory_response.status == 200
+      debug:
+        var: update_inventory_response.json
