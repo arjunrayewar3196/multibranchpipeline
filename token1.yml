@@ -40,7 +40,7 @@
         headers:
           Authorization: "Bearer {{ awx_token }}"
         body_format: json
-        body: '{"variables": {{ inventory_variables }}'
+        body: '{"variables": {{ inventory_variables }}}'
         status_code: 200
         validate_certs: no
       register: update_inventory_response
