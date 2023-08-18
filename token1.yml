@@ -6,7 +6,7 @@
     awx_base_url: "http://18.143.133.0:30300"
     awx_token: "AcLdcQZ0ZYLn53Vpxvnhn9U3U7VrJS"
     organization_id: 1
-    inventory_name: "My_New_Inventory1"
+    inventory_name: "My_New_Inventory2"
     inventory_variables: 
       key1: value1
       key2: value2
