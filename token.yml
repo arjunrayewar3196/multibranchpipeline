@@ -1,0 +1,25 @@
+---
+- name: Create AWX API Token
+  hosts: localhost
+  gather_facts: no
+  vars:
+    tower_base_url: "http://18.143.133.0:30300/"
+    tower_username: "admin"
+    tower_password: "i-0b5285e554c62f964"
+    token_name: "MyAPIUserToken"
+  tasks:
+    - name: Create API Token
+      uri:
+        url: "{{ awx_base_url }}/api/v2/tokens/"
+        method: POST
+        user: "{{ awx_username }}"
+        password: "{{ awx_password }}"
+        body_format: json
+        body: '{"name": "{{ token_name }}"}'
+        status_code: 201
+        validate_certs: no 
+      register: create_token_response
+
+    - name: Display API Response
+      debug:
+        var: create_token_response.json
