@@ -1,0 +1,45 @@
+---
+- name: Create inventory and save vars
+  hosts: localhost
+  gather_facts: no
+  vars:
+    inventory_name: "My Inventory"
+    group_name: "My Group"
+    host_name: "my_dynamic_host"
+
+  tasks:
+    - name: Create variable dictionary
+      set_fact:
+        var_dict:
+          my_var: "my_value"
+          my_other_var: "my_other_value"
+
+    - name: Create dynamic host
+      add_host:
+        name: "{{ host_name }}"
+        ansible_host: 127.0.0.1
+        ansible_connection: local
+        vars: "{{ var_dict }}"
+
+    - name: Create inventory
+      tower_inventory:
+        tower_config_file: /path/to/tower-cli.cfg
+        name: "{{ inventory_name }}"
+        organization: MyOrganization
+        state: present
+
+    - name: Create group
+      tower_group:
+        tower_config_file: /path/to/tower-cli.cfg
+        inventory: "{{ inventory_name }}"
+        name: "{{ group_name }}"
+        state: present
+
+    - name: Add host to group
+      tower_host:
+        tower_config_file: /path/to/tower-cli.cfg
+        inventory: "{{ inventory_name }}"
+        name: "{{ host_name }}"
+        groups: "{{ group_name }}"
+        variables: "{{ var_dict }}"
+        state: present
