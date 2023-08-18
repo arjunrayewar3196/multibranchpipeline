@@ -1,0 +1,121 @@
+---
+- name: Create inventory and save vars
+  hosts: localhost
+  gather_facts: true
+  vars:
+    inventory_name: "{{ awx_inventory_name }}"
+    group_name: "{{ awx_group_name }}"
+    host_name: "{{ awx_host_name }}"
+    user_name: "{{ user_names }}"
+    user_group: "{{ user_groups }}"
+  tasks:
+    - name: Print the available groups
+      getent:
+        database: group
+      register: out
+
+    - name: create groups
+      ansible.builtin.group:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ user_groups.split(\n) }}"
+      ignore_errors: true
+      register: res
+      when:
+        - '"{{ item }}" not in ansible_facts.getent_group'
+
+    - name: setting fact for grps
+      set_fact:
+        grp_names: "{{ res['results'] | map(attribute='name') | join(', ') }}"
+
+#    - debug:
+#        msg: "{{ grp_names }}"
+
+    - name: Fetch available users
+      getent:
+        database: passwd
+      register: users_data
+
+    - name: create user
+      user:
+        name: "{{ item }}"
+        group: "tomusers"
+        groups: "{{ grp_names }}"
+        home: '/home/lucky'
+        state: present
+      ignore_errors: true
+      register: user_res
+      loop: "{{ user_names.split(\n) }}"
+      when:
+        - '"{{ item }}" not in ansible_facts.getent_passwd'
+
+    - name: setting the fact for user details
+      set_fact:
+        users_info: "{{ user_res }}"
+
+    - name: Checking the directories before creation
+      ansible.builtin.stat:
+        path: "{{ path_file }}"
+      register: directory_res
+
+#  - debug: var=directory_data.stat.path
+
+    - name: Create directory if it doesn't exists
+      file:
+        path: "{{ path_file }}"
+        state: directory
+        mode: 0755
+      register: dir_path
+      when: not directory_res.stat.exists
+
+    - name: create file with different user and group
+      file:
+        path: "{{ path_file }}/{{ item }}_test.txt"
+        state: touch
+        owner: "{{ item }}"
+        group: "tomusers"
+      become: true
+      with_items: "{{ user_names.split(\n) }}"
+      register: file_create
+
+    - name: Create variable dictionary
+      set_fact:
+        company: "{{ company }}"
+      vars:
+        company:
+          user_details:
+            u_name: "{{ users_info }}"
+            u_group: "{{ user_groups }}"
+            files_path_created: "{{ file_create }}"
+            dir_created: "{{ dir_path }}"
+
+    - name: Create dynamic host
+      add_host:
+        name: "{{ host_name }}"
+        ansible_host: 192.168.56.10
+        ansible_connection: local
+        vars: "{{ company }}"
+
+    - name: Create inventory
+      tower_inventory:
+        #tower_config_file: var/lib/awx/projects/tower-cli.cfg
+        name: "{{ inventory_name }}"
+        organization: 'Demo'
+        variables: "{{ company }}"
+        state: present
+
+    - name: Create group
+      tower_group:
+        #tower_config_file: var/lib/awx/projects/tower-cli.cfg
+        inventory: "{{ inventory_name }}"
+        name: "{{ group_name }}"
+        state: present
+
+    - name: Add host to group
+      tower_host:
+        #tower_config_file: /var/lib/awx/projects/tower-cli.cfg
+        inventory: "{{ inventory_name }}"
+        name: "{{ host_name }}"
+        #groups: "{{ group_name }}"
+        variables: "{{ company }}"
+        state: present
