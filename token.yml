@@ -10,7 +10,7 @@
   tasks:
     - name: Create API Token
       uri:
-        url: "{{ tower_base_ur }}/api/v2/tokens/"
+        url: "{{ tower_base_url }}/api/v2/tokens/"
         method: POST
         user: "{{ tower_username }}"
         password: "{{ tower_password }}"
