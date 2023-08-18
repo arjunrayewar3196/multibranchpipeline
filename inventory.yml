@@ -17,7 +17,7 @@
     - name: Create dynamic host
       add_host:
         name: "{{ host_name }}"
-        ansible_host: 127.0.0.1
+        ansible_host: 13.229.89.61
         ansible_connection: local
         vars: "{{ var_dict }}"
 
