@@ -20,6 +20,7 @@
         #tower_config_file: var/lib/awx/projects/tower-cli.cfg
         name: "{{ inventory_name }}"   
         state: present
+        organization: Default
 
     - name: Create group
       tower_group:
@@ -27,6 +28,7 @@
         inventory: "{{ inventory_name }}"
         name: "{{ group_name }}"
         state: present
+        organization: Default
 
     - name: Add host to group
       tower_host:
