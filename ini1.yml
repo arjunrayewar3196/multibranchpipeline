@@ -13,14 +13,13 @@
         name: "{{ host_name }}"
         ansible_host: 13.229.89.61
         ansible_connection: local
-        vars: "{{ company }}"
-
+        
     - name: Create inventory
       tower_inventory:
         #tower_config_file: var/lib/awx/projects/tower-cli.cfg
         name: "{{ inventory_name }}"
         organization: 'Demo'
-        variables: "{{ company }}"
+       
         state: present
 
     - name: Create group
